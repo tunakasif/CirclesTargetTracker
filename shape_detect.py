@@ -1,3 +1,4 @@
+from typing import Optional, Tuple
 import cv2
 
 
@@ -30,10 +31,7 @@ def get_target_bounding_rect(target_contours: list, target_count: int) -> list:
 
 def sentinel_mode(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
     blur = cv2.GaussianBlur(gray, (9, 9), 1.5)
-    ret3, th3 = cv2.threshold(
-        blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     edges = cv2.Canny(blur, 100, 200)
 
     contours, hierarchy = cv2.findContours(
@@ -60,33 +58,50 @@ def drawBox(img, bbox):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
 
-def tracker_mode(frame, tracker):
+def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional[float]]:
     success, target = tracker.update(frame)
     if success:
         drawBox(frame, target)
+        bounding_box = target.index.__self__
+        center_location_x = bounding_box[0] + bounding_box[2] // 2
+        center_location_y = bounding_box[1] + bounding_box[3] // 2
+
+        quantized_x = center_location_x / (frame_size[0] / 2) - 1
+        quantized_y = center_location_y / (frame_size[1] / 2) - 1
+        quantized_x = min(1, max(-1, quantized_x))
+        quantized_y = min(1, max(-1, quantized_y))
+
         cv2.putText(frame, 'Status:', (20, 40),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
-        return target
+        return target, quantized_x
     else:
-        return None
+        return None, None
 
 
 if __name__ == "__main__":
     cap = cv2.VideoCapture(0)
     tracker = cv2.TrackerKCF_create()
     target = None
+    target_center_x = None
 
     while True:
         ret, frame = cap.read()
-        frame = cv2.resize(frame, (640, 360), cv2.INTER_LINEAR)
+        frame_size = (640, 360)
+        frame = cv2.resize(frame, frame_size, cv2.INTER_LINEAR)
         if target:
-            target = tracker_mode(frame, tracker)
+            target, target_center_x = tracker_mode(frame, tracker, frame_size)
         else:
             target = sentinel_mode(frame)
             if target:
                 tracker = cv2.TrackerKCF_create()
                 tracker.init(frame, tuple(target))
 
+        if target_center_x:
+            cv2.putText(frame, f'Center: {target_center_x:0.3f}', (20, 80),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
+        else:
+            cv2.putText(frame, f'Center: None', (20, 80),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
         cv2.imshow('frame', frame)
         if cv2.waitKey(10) == 27:
             break
