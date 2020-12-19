@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 import cv2
 
 
@@ -29,7 +29,7 @@ def get_target_bounding_rect(target_contours: list, target_count: int) -> list:
         return big_rect
 
 
-def sentinel_mode(frame):
+def sentinel_mode(frame, headless=False):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (9, 9), 1.5)
     edges = cv2.Canny(blur, 100, 200)
@@ -47,14 +47,13 @@ def sentinel_mode(frame):
                        target_rect[1] + target_rect[3]), (255, 0, 255), 2)
         return target_rect
 
-    cv2.imshow('edges', edges)
     return None
 
 
 def drawBox(img, bbox):
     x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
     cv2.rectangle(img, (x, y), ((x + w), (y + h)), (255, 0, 255), 3, 3)
-    cv2.putText(img, "Tracking", (100, 40),
+    cv2.putText(img, 'Tracking', (100, 40),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
 
@@ -78,32 +77,45 @@ def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional
         return None, None
 
 
-if __name__ == "__main__":
-    cap = cv2.VideoCapture(0)
-    tracker = cv2.TrackerKCF_create()
-    target = None
-    target_center_x = None
+class Detector:
 
-    while True:
-        ret, frame = cap.read()
-        frame_size = (640, 360)
-        frame = cv2.resize(frame, frame_size, cv2.INTER_LINEAR)
+    def __init__(self, no: int, frame_size: Tuple[int, int]):
+        self._cap = cv2.VideoCapture(no)
+        self._tracker = cv2.TrackerKCF_create()
+        self._frame_size = frame_size
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.cap.release()
+
+    @property
+    def cap(self):
+        return self._cap
+
+    @property
+    def frame_size(self):
+        return self._frame_size
+
+    @property
+    def tracker(self):
+        return self._tracker
+
+    @tracker.setter
+    def tracker(self, tracker):
+        self._tracker = tracker
+
+    def detect(self, target: Optional[Any] = None) -> Tuple[Any, Any, Optional[float]]:
+        _, frame = self.cap.read()
+        frame = cv2.resize(frame, self.frame_size, cv2.INTER_LINEAR)
+        center = None
         if target:
-            target, target_center_x = tracker_mode(frame, tracker, frame_size)
+            target, center = tracker_mode(
+                frame, self.tracker, self.frame_size)
         else:
             target = sentinel_mode(frame)
             if target:
-                tracker = cv2.TrackerKCF_create()
-                tracker.init(frame, tuple(target))
-
-        if target_center_x:
-            cv2.putText(frame, f'Center: {target_center_x:0.3f}', (20, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
-        else:
-            cv2.putText(frame, f'Center: None', (20, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
-        cv2.imshow('frame', frame)
-        if cv2.waitKey(10) == 27:
-            break
-    cap.release()
-    cv2.destroyAllWindows()
+                self.tracker = cv2.TrackerKCF_create()
+                self.tracker.init(frame, tuple(target))
+        return frame, target, center
