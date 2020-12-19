@@ -57,7 +57,7 @@ def drawBox(img, bbox):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
 
-def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional[float]]:
+def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional[float], Optional[float]]:
     success, target = tracker.update(frame)
     if success:
         drawBox(frame, target)
@@ -72,9 +72,9 @@ def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional
 
         cv2.putText(frame, 'Status:', (20, 40),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
-        return target, quantized_x
+        return target, quantized_x, quantized_y
     else:
-        return None, None
+        return None, None, None
 
 
 class Detector:
@@ -106,16 +106,16 @@ class Detector:
     def tracker(self, tracker):
         self._tracker = tracker
 
-    def detect(self, target: Optional[Any] = None) -> Tuple[Any, Any, Optional[float]]:
+    def detect(self, target: Optional[Any] = None) -> Tuple[Any, Any, Optional[float], Optional[float]]:
         _, frame = self.cap.read()
         frame = cv2.resize(frame, self.frame_size, cv2.INTER_LINEAR)
-        center = None
+        center_x, center_y = None, None
         if target:
-            target, center = tracker_mode(
+            target, center_x, center_y = tracker_mode(
                 frame, self.tracker, self.frame_size)
         else:
             target = sentinel_mode(frame)
             if target:
                 self.tracker = cv2.TrackerKCF_create()
                 self.tracker.init(frame, tuple(target))
-        return frame, target, center
+        return frame, target, center_x, center_y
