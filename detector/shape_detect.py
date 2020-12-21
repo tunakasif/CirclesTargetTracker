@@ -79,7 +79,7 @@ def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional
 
 class Detector:
 
-    def __init__(self, no: int, frame_size: Tuple[int, int]):
+    def __init__(self, no: int, frame_size: Optional[Tuple[int, int]] = None):
         self._cap = cv2.VideoCapture(no)
         self._tracker = cv2.TrackerKCF_create()
         self._frame_size = frame_size
@@ -108,7 +108,8 @@ class Detector:
 
     def detect(self, target: Optional[Any] = None) -> Tuple[Any, Any, Optional[float], Optional[float]]:
         _, frame = self.cap.read()
-        frame = cv2.resize(frame, self.frame_size, cv2.INTER_LINEAR)
+        if self.frame_size:
+            frame = cv2.resize(frame, self.frame_size, cv2.INTER_LINEAR)
         center_x, center_y = None, None
         if target:
             target, center_x, center_y = tracker_mode(
