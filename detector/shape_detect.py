@@ -83,12 +83,22 @@ class Detector:
         self._cap = cv2.VideoCapture(no)
         self._tracker = cv2.TrackerKCF_create()
         self._frame_size = frame_size
+        if frame_size:
+            self._scale = True
+        else:
+            self._scale = False
+            _, frame = self._cap.read()
+            self._frame_size = (frame.shape[0], frame.shape[1])
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.cap.release()
+
+    @property
+    def scale(self):
+        return self._scale
 
     @property
     def cap(self):
@@ -108,7 +118,7 @@ class Detector:
 
     def detect(self, target: Optional[Any] = None) -> Tuple[Any, Any, Optional[float], Optional[float]]:
         _, frame = self.cap.read()
-        if self.frame_size:
+        if self.scale:
             frame = cv2.resize(frame, self.frame_size, cv2.INTER_LINEAR)
         center_x, center_y = None, None
         if target:

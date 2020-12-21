@@ -1,7 +1,7 @@
 from detector import Detector
 import cv2
 
-with Detector(0, (640, 360)) as detector:
+with Detector(0, None) as detector:
     target = None
     while True:
         frame, target, center_x, center_y = detector.detect(target)
