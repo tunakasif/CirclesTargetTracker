@@ -79,7 +79,7 @@ def tracker_mode(frame, tracker, frame_size) -> Tuple[Optional[object], Optional
 
 class Detector:
 
-    def __init__(self, no: int, frame_size: Optional[Tuple[int, int]] = None):
+    def __init__(self, no: int, frame_size: Optional[Tuple[int, int]] = None, fps: int = 30):
         self._cap = cv2.VideoCapture(no)
         self._tracker = cv2.TrackerKCF_create()
         self._frame_size = frame_size
@@ -89,6 +89,7 @@ class Detector:
             self._scale = False
             _, frame = self._cap.read()
             self._frame_size = (frame.shape[0], frame.shape[1])
+        self.cap.set(cv2.CAP_PROP_FPS, fps)
 
     def __enter__(self):
         return self
