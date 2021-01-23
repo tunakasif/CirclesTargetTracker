@@ -3,7 +3,7 @@ from detector import Detector
 import cv2
 import time
 
-with Detector(1, None) as detector:
+with Detector(0, None) as detector:
     target = None
     while True:
         start = time.time()
