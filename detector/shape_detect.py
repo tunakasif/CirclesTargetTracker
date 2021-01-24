@@ -29,7 +29,7 @@ def get_target_bounding_rect(target_contours: list, target_count: int) -> list:
         return big_rect
 
 
-def sentinel_mode(frame, headless=False):
+def sentinel_mode(frame, headless=False, target_scale=0.4):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (9, 9), 1.5)
     edges = cv2.Canny(blur, 100, 200)
@@ -42,6 +42,21 @@ def sentinel_mode(frame, headless=False):
 
     cv2.drawContours(frame, circle_contour_list,  -1, (0, 0, 255), 2)
     if target_rect:
+        frame_width_limit = int(frame.shape[1] * target_scale)
+        frame_height_limit = int(frame.shape[0] * target_scale)
+
+        # set a width limit to target_rect, and shift the target to center
+        if target_rect[2] > frame_width_limit:
+            target_rect[0] = target_rect[0] + \
+                (target_rect[2] - frame_width_limit) // 2
+            target_rect[2] = frame_width_limit
+
+        # set a width limit to target_rect, and shift the target to center
+        if target_rect[3] > frame_height_limit:
+            target_rect[1] = target_rect[1] + \
+                (target_rect[3] - frame_height_limit) // 2
+            target_rect[3] = frame_height_limit
+
         cv2.rectangle(frame, (target_rect[0], target_rect[1]),
                       (target_rect[0] + target_rect[2],
                        target_rect[1] + target_rect[3]), (255, 0, 255), 2)
