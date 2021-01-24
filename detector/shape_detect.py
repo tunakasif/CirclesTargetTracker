@@ -29,7 +29,7 @@ def get_target_bounding_rect(target_contours: list, target_count: int) -> list:
         return big_rect
 
 
-def sentinel_mode(frame, headless=False, target_scale=0.4):
+def sentinel_mode(frame, headless=False, target_scale=0.3):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (9, 9), 1.5)
     edges = cv2.Canny(blur, 100, 200)
