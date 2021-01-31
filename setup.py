@@ -14,5 +14,5 @@ setup(
     author='Tuna Alikasifoglu',
     author_email='tunakasif@gmail.com',
     packages=find_packages(),
-    install_requires=["opencv-contrib-python"],
+    install_requires=["opencv-contrib-python", "imutils"],
 )
