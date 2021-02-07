@@ -1,1 +1,1 @@
-from .shape_detect import Detector
+from .shape_detect import Detector, DetectorColor, TargetType
