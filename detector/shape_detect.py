@@ -81,7 +81,6 @@ def sentinel_mode(frame, target_count=3, target_scale=0.3,
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (9, 9), 1.5)
     edges = cv2.Canny(blur, 100, 200)
-    cv2.imshow('edges', edges)
 
     # obtain necessary contours from detected edges
     contours, hierarchy = cv2.findContours(
